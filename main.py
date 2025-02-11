@@ -1247,27 +1247,17 @@ def draw_start_screen(screen):
         BUTTON_SIZE[0],
         BUTTON_SIZE[1]
     )
-    load_button_rect = pygame.Rect(
-        (SCREEN_WIDTH - BUTTON_SIZE[0]) // 2,
-        (SCREEN_HEIGHT - BUTTON_SIZE[1]) // 2 + 60,
-        BUTTON_SIZE[0],
-        BUTTON_SIZE[1]
-    )
 
     screen.blit(BUTTON_IMAGE, start_button_rect.topleft)
-    screen.blit(BUTTON_IMAGE, load_button_rect.topleft)
 
     font = pygame.font.Font(None, 36)
     start_text = font.render("Start", True, (255, 255, 0))
-    load_text = font.render("Load", True, (255, 255, 255))
 
     screen.blit(start_text, (
         start_button_rect.centerx - start_text.get_width() // 2,
         start_button_rect.centery - start_text.get_height() // 2))
-    screen.blit(load_text, (
-        load_button_rect.centerx - load_text.get_width() // 2, load_button_rect.centery - load_text.get_height() // 2))
 
-    return start_button_rect, load_button_rect
+    return start_button_rect
 
 
 pygame.mixer.init()
@@ -1289,7 +1279,7 @@ def main():
     start_screen = True
     while start_screen:
         screen.fill(START_SCREEN_COLOR)
-        start_button_rect, load_button_rect = draw_start_screen(screen)
+        start_button_rect = draw_start_screen(screen)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -1298,8 +1288,6 @@ def main():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()
                 if start_button_rect.collidepoint(mouse_pos):
-                    start_screen = False
-                elif load_button_rect.collidepoint(mouse_pos):
                     start_screen = False
 
         pygame.display.flip()
