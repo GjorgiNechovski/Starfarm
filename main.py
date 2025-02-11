@@ -1,25 +1,16 @@
 import pygame
 import math
 import random
-import os
 import time
+
+from functions.load_and_scale import load_and_scale_image
+from models.achivement_popup import AchievementPopup
 from models.inventoryItem import InventoryItem
-
-TILE_SIZE = (64, 64)
-MAP_WIDTH = 15
-MAP_HEIGHT = 9
-
-WHITE = (255, 255, 255)
-BROWN = (139, 69, 19)
-SELL_TILE_COLOR = (139, 69, 19)
-WATERED_COLOR = (100, 50, 19)
-
-INVENTORY_SLOT_SIZE = (80, 80)
-NUM_INVENTORY_SLOTS = 8
-INVENTORY_HEIGHT = INVENTORY_SLOT_SIZE[1]
-
-SCREEN_WIDTH = MAP_WIDTH * TILE_SIZE[0]
-SCREEN_HEIGHT = MAP_HEIGHT * TILE_SIZE[1] + INVENTORY_HEIGHT
+from models.constants import *
+from models.constants import achievements
+from models.plant import Plant
+from models.sleep_popup import SleepPopup
+from models.tile import Tile
 
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -35,35 +26,18 @@ grass_tile = pygame.transform.scale(grass_tile, TILE_SIZE)
 farmland_tile = pygame.transform.scale(farmland_tile, TILE_SIZE)
 bush_tile = pygame.transform.scale(bush_tile, TILE_SIZE)
 
-inventory_slot_image = pygame.image.load('assets/inventory/Inventory_background.png').convert_alpha()
-seedbag_image = pygame.image.load('assets/plants/seeds/deathbell.png').convert_alpha()
-rose_seed_image = pygame.image.load('assets/plants/seeds/rose.png').convert_alpha()
-pointy_seed_image = pygame.image.load('assets/plants/seeds/pointy.png').convert_alpha()
-daisy_seed_image = pygame.image.load('assets/plants/seeds/daisy.png').convert_alpha()
-inventory_select_image = pygame.image.load('assets/inventory/Inventory_select.png').convert_alpha()
-sunflower_seed_image = pygame.image.load('assets/plants/seeds/sunflower.png').convert_alpha()
-hydrangea_seed_image = pygame.image.load('assets/plants/seeds/hydrangea.png').convert_alpha()
-lavender_seed_image = pygame.image.load('assets/plants/seeds/lavender.png').convert_alpha()
-pink_rose_seed_image = pygame.image.load('assets/plants/seeds/pink_rose.png').convert_alpha()
-magic_flower_seed_image = pygame.image.load('assets/plants/seeds/magic_flower.png').convert_alpha()
-watering_can_image = pygame.image.load('assets/inventory/watering_can.png').convert_alpha()
-
-inventory_slot_image = pygame.transform.scale(inventory_slot_image, INVENTORY_SLOT_SIZE)
-seedbag_image = pygame.transform.scale(seedbag_image, (60, 60))
-rose_seed_image = pygame.transform.scale(rose_seed_image, (60, 60))
-pointy_seed_image = pygame.transform.scale(pointy_seed_image, (60, 60))
-daisy_seed_image = pygame.transform.scale(daisy_seed_image, (60, 60))
-inventory_select_image = pygame.transform.scale(inventory_select_image, INVENTORY_SLOT_SIZE)
-sunflower_seed_image = pygame.transform.scale(sunflower_seed_image, (60, 60))
-hydrangea_seed_image = pygame.transform.scale(hydrangea_seed_image, (60, 60))
-lavender_seed_image = pygame.transform.scale(lavender_seed_image, (60, 60))
-pink_rose_seed_image = pygame.transform.scale(pink_rose_seed_image, (60, 60))
-magic_flower_seed_image = pygame.transform.scale(magic_flower_seed_image, (60, 60))
-watering_can_image = pygame.transform.scale(watering_can_image, (60, 60))
-
-
-CHARACTER_SIZE = (40, 40)
-WATERING_CHARACTER_SIZE = (80, 45)
+inventory_slot_image = load_and_scale_image('assets/inventory/Inventory_background.png', INVENTORY_SLOT_SIZE)
+seedbag_image = load_and_scale_image('assets/plants/seeds/deathbell.png', (60, 60))
+rose_seed_image = load_and_scale_image('assets/plants/seeds/rose.png', (60, 60))
+pointy_seed_image = load_and_scale_image('assets/plants/seeds/pointy.png', (60, 60))
+daisy_seed_image = load_and_scale_image('assets/plants/seeds/daisy.png', (60, 60))
+inventory_select_image = load_and_scale_image('assets/inventory/Inventory_select.png', INVENTORY_SLOT_SIZE)
+sunflower_seed_image = load_and_scale_image('assets/plants/seeds/sunflower.png', (60, 60))
+hydrangea_seed_image = load_and_scale_image('assets/plants/seeds/hydrangea.png', (60, 60))
+lavender_seed_image = load_and_scale_image('assets/plants/seeds/lavender.png', (60, 60))
+pink_rose_seed_image = load_and_scale_image('assets/plants/seeds/pink_rose.png', (60, 60))
+magic_flower_seed_image = load_and_scale_image('assets/plants/seeds/magic_flower.png', (60, 60))
+watering_can_image = load_and_scale_image('assets/inventory/watering_can.png', (60, 60))
 
 last_buy_time = 0
 BUY_COOLDOWN = 0.2
@@ -82,7 +56,6 @@ inventory[1] = InventoryItem(
     price=0
 )
 
-
 inventory[2] = InventoryItem(
     item_type="seed",
     image=seedbag_image,
@@ -91,43 +64,21 @@ inventory[2] = InventoryItem(
     price=100
 )
 
+achievements = achievements
+
+DAY_DURATION = DAY_DURATION
+
 tile_cooldown = {}
 selected_item_index = 0
 
-DAY_DURATION = 30
-NIGHT_DURATION = 30
 current_cycle_time = 0
 is_day = True
 last_time = time.time()
-
-PLANT_PRICES = {
-    "deathBell": 450,
-    "rose": 550,
-    "pointy": 550,
-    "daisy": 2200,
-    "sunflower": 2300,
-    "hydrangea": 2000,
-    "lavender": 6000,
-    "pink_rose": 9300,
-    "magic_flower": 8000,
-}
 
 BUY_POSITION = (MAP_WIDTH - 4, 0)
 BUY_GRID_SIZE = 15
 buy_grid = [None] * BUY_GRID_SIZE
 buy_active = False
-
-BUY_PRICES = {
-    "Bluebell Seeds": 100,
-    "Rose Seeds": 200,
-    "Pointy Seeds": 250,
-    "Daisy Seeds": 900,
-    "Sunflower Seeds": 1100,
-    "Hydrangea Seeds": 1050,
-    "Lavender Seeds": 3500,
-    "Pink Rose Seeds": 5000,
-    "Magic Flower Seeds": 5000,
-}
 
 buy_grid[0] = InventoryItem(
     item_type="seed",
@@ -196,29 +147,6 @@ buy_grid[8] = InventoryItem(
     price=BUY_PRICES["Magic Flower Seeds"]
 )
 
-achievements = {
-    "first_harvest": {
-        "name": "First Harvest",
-        "description": "Grow and harvest a single crop.",
-        "completed": False
-    },
-    "sell_one_of_each": {
-        "name": "Sell One of Each Crop",
-        "description": "Sell at least one of each crop type.",
-        "completed": False
-    },
-    "one_of_each": {
-        "name": "One of Each",
-        "description": "Have at least one of each crop fully grown on your farm at the same time.",
-        "completed": False
-    },
-    "rich_farmer": {
-        "name": "Rich Farmer",
-        "description": "Reach 30,000 coins.",
-        "completed": False
-    }
-}
-
 sold_crops = {
     "deathBell": False,
     "rose": False,
@@ -231,97 +159,8 @@ sold_crops = {
     "magic_flower": False
 }
 
-class Tile:
-    def __init__(self, tile_type, image, position):
-        self.tile_type = tile_type
-        self.image = image
-        self.position = position
-        self.watered = False
-        self.is_river = False
-        self.is_walkable = False
-        if tile_type == "farmland":
-            self.watered_image = self.create_darker_image(image)
-        else:
-            self.watered_image = None
-
-    def create_darker_image(self, image):
-        darkened_image = image.copy()
-        darkened_image.fill((50, 50, 50, 0), special_flags=pygame.BLEND_RGBA_SUB)
-        return darkened_image
-
-    def draw(self, screen):
-        x, y = self.position
-        tile_rect = pygame.Rect(x * TILE_SIZE[0], y * TILE_SIZE[1], TILE_SIZE[0], TILE_SIZE[1])
-
-        if self.tile_type == "farmland" and self.watered:
-            screen.blit(self.watered_image, tile_rect.topleft)
-        else:
-            screen.blit(self.image, tile_rect.topleft)
-
-        if self.tile_type == 'farmland':
-            pygame.draw.rect(screen, BROWN, tile_rect, 1)
-        elif self.tile_type == 'sell':
-            pygame.draw.rect(screen, SELL_TILE_COLOR, tile_rect)
-            font = pygame.font.Font(None, 24)
-            sell_text = font.render("Sell", True, WHITE)
-            text_x = x * TILE_SIZE[0] + (TILE_SIZE[0] - sell_text.get_width()) // 2
-            text_y = y * TILE_SIZE[1] + (TILE_SIZE[1] - sell_text.get_height()) // 2
-            screen.blit(sell_text, (text_x, text_y))
-        elif self.tile_type == 'buy':
-            pygame.draw.rect(screen, (0, 100, 0), tile_rect)
-            font = pygame.font.Font(None, 24)
-            buy_text = font.render("Buy", True, WHITE)
-            text_x = x * TILE_SIZE[0] + (TILE_SIZE[0] - buy_text.get_width()) // 2
-            text_y = y * TILE_SIZE[1] + (TILE_SIZE[1] - buy_text.get_height()) // 2
-            screen.blit(buy_text, (text_x, text_y))
-class Plant:
-    def __init__(self, plant_type, base_path, num_phases, position, days_to_grow=1):
-        self.plant_type = plant_type
-        self.base_path = base_path
-        self.num_phases = num_phases
-        self.current_phase = 1
-        self.position = position
-        self.images = []
-        self.days_to_grow = days_to_grow
-        self.days_in_current_phase = 0
-
-        grown_image_path = os.path.join(base_path, f"{plant_type}{num_phases}.png")
-        self.grown_image = pygame.image.load(grown_image_path).convert_alpha()
-        self.grown_image = pygame.transform.scale(self.grown_image, (TILE_SIZE[0], TILE_SIZE[1]))
-
-        for i in range(1, num_phases + 1):
-            image_path = os.path.join(base_path, f"{plant_type}{i}.png")
-            image = pygame.image.load(image_path).convert_alpha()
-
-            if i == num_phases:
-                scaled_image = self.grown_image
-            else:
-                scaled_image = pygame.transform.scale(image, (TILE_SIZE[0] // 2, TILE_SIZE[1] // 2))
-
-            self.images.append(scaled_image)
-
-    def grow(self):
-        if self.current_phase < self.num_phases:
-            self.days_in_current_phase += 1
-            if self.days_in_current_phase >= self.days_to_grow:
-                self.current_phase += 1
-                self.days_in_current_phase = 0
-
-    def draw(self, screen):
-        x, y = self.position
-        if self.current_phase == self.num_phases:
-            plant_image = self.grown_image
-        else:
-            plant_image = self.images[self.current_phase - 1]
-
-        plant_x = x * TILE_SIZE[0] + (TILE_SIZE[0] - plant_image.get_width()) // 2
-        plant_y = y * TILE_SIZE[1] + (TILE_SIZE[1] - plant_image.get_height()) // 2
-
-        screen.blit(plant_image, (plant_x, plant_y))
-
-    def is_grown(self):
-        return self.current_phase == self.num_phases
 plants = []
+
 
 class Character:
     def __init__(self, x, y):
@@ -333,11 +172,16 @@ class Character:
         self.is_watering = False
 
         self.animation_frames = {
-            "front": [pygame.transform.scale(pygame.image.load(f'assets/character/front{i}.png').convert_alpha(), CHARACTER_SIZE) for i in range(1, 4)],
-            "back": [pygame.transform.scale(pygame.image.load(f'assets/character/back{i}.png').convert_alpha(), CHARACTER_SIZE) for i in range(1, 4)],
-            "side": [pygame.transform.scale(pygame.image.load(f'assets/character/side{i}.png').convert_alpha(), CHARACTER_SIZE) for i in range(1, 4)],
-            "idle": [pygame.transform.scale(pygame.image.load(f'assets/character/front1.png').convert_alpha(), CHARACTER_SIZE)],
-            "watering": [pygame.transform.scale(pygame.image.load(f'assets/character/watering{i}.png').convert_alpha(), WATERING_CHARACTER_SIZE) for i in range(1, 4)]
+            "front": [pygame.transform.scale(pygame.image.load(f'assets/character/front{i}.png').convert_alpha(),
+                                             CHARACTER_SIZE) for i in range(1, 4)],
+            "back": [pygame.transform.scale(pygame.image.load(f'assets/character/back{i}.png').convert_alpha(),
+                                            CHARACTER_SIZE) for i in range(1, 4)],
+            "side": [pygame.transform.scale(pygame.image.load(f'assets/character/side{i}.png').convert_alpha(),
+                                            CHARACTER_SIZE) for i in range(1, 4)],
+            "idle": [pygame.transform.scale(pygame.image.load(f'assets/character/front1.png').convert_alpha(),
+                                            CHARACTER_SIZE)],
+            "watering": [pygame.transform.scale(pygame.image.load(f'assets/character/watering{i}.png').convert_alpha(),
+                                                WATERING_CHARACTER_SIZE) for i in range(1, 4)]
         }
 
         self.current_frame = 0
@@ -383,7 +227,6 @@ class Character:
             self.is_watering = True
             self.watering_sound.play()
 
-
     def update_animation(self):
         self.frame_counter += 1
 
@@ -420,106 +263,6 @@ class Character:
         screen.blit(character_image, (character_draw_x, character_draw_y))
 
 
-class AchievementPopup:
-    def __init__(self):
-        self.message = ""
-        self.show = False
-        self.timer = 0
-        self.y = SCREEN_HEIGHT + 50
-        self.speed = 1
-        self.popup_height = 80
-
-    def display(self, message):
-        self.message = message
-        self.show = True
-        self.timer = time.time()
-        self.y = SCREEN_HEIGHT + 50
-
-    def update(self):
-        if self.show:
-            target_y = SCREEN_HEIGHT - INVENTORY_HEIGHT - self.popup_height + 150
-
-            if time.time() - self.timer < 5:
-                if self.y > target_y:
-                    self.y -= self.speed
-                elif self.y < target_y:
-                    self.y = target_y
-            else:
-                if self.y < SCREEN_HEIGHT + self.popup_height + 50:
-                    self.y += self.speed
-                else:
-                    self.show = False
-
-    def draw(self, screen):
-        if self.show:
-            popup_width = 300
-            popup_x = SCREEN_WIDTH - popup_width - 20
-            popup_y = self.y - self.popup_height - 20
-
-            pygame.draw.rect(screen, BROWN, (popup_x, popup_y, popup_width, self.popup_height))
-            pygame.draw.rect(screen, WHITE, (popup_x, popup_y, popup_width, self.popup_height), 2)
-
-            font = pygame.font.Font(None, 24)
-            text = font.render(self.message, True, WHITE)
-            text_x = popup_x + (popup_width - text.get_width()) // 2
-            text_y = popup_y + (self.popup_height - text.get_height()) // 2
-            screen.blit(text, (text_x, text_y))
-
-
-class SleepPopup:
-    def __init__(self):
-        self.show = False
-        self.yes_rect = None
-        self.no_rect = None
-
-    def display(self):
-        self.show = True
-
-    def draw(self, screen):
-        if self.show:
-            popup_width = 300
-            popup_height = 150
-            popup_x = (SCREEN_WIDTH - popup_width) // 2
-            popup_y = (SCREEN_HEIGHT - popup_height) // 2
-
-            pygame.draw.rect(screen, BROWN, (popup_x, popup_y, popup_width, popup_height))
-            pygame.draw.rect(screen, WHITE, (popup_x, popup_y, popup_width, popup_height), 2)
-
-            font = pygame.font.Font(None, 36)
-            message_text = font.render("Sleep for the night?", True, WHITE)
-            message_x = popup_x + (popup_width - message_text.get_width()) // 2
-            message_y = popup_y + 20
-            screen.blit(message_text, (message_x, message_y))
-
-            yes_button_width = 80
-            yes_button_height = 40
-            yes_button_x = popup_x + 50
-            yes_button_y = popup_y + 80
-            self.yes_rect = pygame.Rect(yes_button_x, yes_button_y, yes_button_width, yes_button_height)
-            pygame.draw.rect(screen, (0, 255, 0), self.yes_rect)
-            yes_text = font.render("YES", True, WHITE)
-            screen.blit(yes_text, (yes_button_x + 10, yes_button_y + 10))
-
-            no_button_width = 80
-            no_button_height = 40
-            no_button_x = popup_x + 170
-            no_button_y = popup_y + 80
-            self.no_rect = pygame.Rect(no_button_x, no_button_y, no_button_width, no_button_height)
-            pygame.draw.rect(screen, (255, 0, 0), self.no_rect)
-            no_text = font.render("NO", True, WHITE)
-            screen.blit(no_text, (no_button_x + 10, no_button_y + 10))
-
-    def handle_click(self, mouse_x, mouse_y):
-        if self.show:
-            if self.yes_rect and self.yes_rect.collidepoint(mouse_x, mouse_y):
-                self.show = False
-                return "yes"
-            elif self.no_rect and self.no_rect.collidepoint(mouse_x, mouse_y):
-                self.show = False
-                return "no"
-        return None
-
-
 achievement_popup = AchievementPopup()
 sleep_popup = SleepPopup()
 
@@ -529,18 +272,12 @@ SELL_POSITION = (MAP_WIDTH - 3, 0)
 sell_grid = [None] * 9
 sell_active = False
 
-MAX_ENERGY = 160
 current_energy = MAX_ENERGY
-ENERGY_BAR_WIDTH = 20
-ENERGY_BAR_HEIGHT = 200
-ENERGY_BAR_X = SCREEN_WIDTH - 40
-ENERGY_BAR_Y = SCREEN_HEIGHT - INVENTORY_HEIGHT - ENERGY_BAR_HEIGHT - 10
-ENERGY_BAR_COLOR = (0, 128, 0)
-ENERGY_BAR_BACKGROUND_COLOR = (139, 69, 19)
 
 dragging_item = None
 dragging_item_index = None
 dragging_item_offset = (0, 0)
+
 
 def generate_map():
     tilemap = [[None for _ in range(MAP_WIDTH)] for _ in range(MAP_HEIGHT)]
@@ -559,7 +296,6 @@ def generate_map():
             else:
                 tilemap[y][x] = Tile('grass', grass_tile, (x, y))
                 tilemap[y][x].is_walkable = True
-
 
     middle_width_start = MAP_WIDTH // 4
     middle_width_end = MAP_WIDTH * 3 // 4
@@ -632,11 +368,13 @@ def generate_bushes(tilemap):
 
     return bush_positions
 
+
 def is_inventory_full():
     for slot in inventory:
         if slot is None:
             return False
     return True
+
 
 def draw_map(tilemap, bush_positions):
     for y in range(MAP_HEIGHT):
@@ -644,6 +382,7 @@ def draw_map(tilemap, bush_positions):
             tilemap[y][x].draw(screen)
             if (x, y) in bush_positions:
                 screen.blit(bush_tile, (x * TILE_SIZE[0], y * TILE_SIZE[1]))
+
 
 def draw_inventory():
     total_width = NUM_INVENTORY_SLOTS * INVENTORY_SLOT_SIZE[0]
@@ -704,9 +443,11 @@ def draw_inventory():
 
             screen.blit(tooltip_surface, (tooltip_x, tooltip_y))
 
+
 def draw_plants():
     for plant in plants:
         plant.draw(screen)
+
 
 def handle_input():
     global selected_item_index, is_day, current_cycle_time
@@ -751,6 +492,7 @@ def handle_input():
 
     character.update_animation()
 
+
 def water_tile(tilemap, x, y):
     global current_energy, current_water
 
@@ -767,6 +509,7 @@ def water_tile(tilemap, x, y):
             character.start_watering()
             return True
     return False
+
 
 def handle_mouse_input(tilemap):
     global selected_item_index
@@ -810,6 +553,7 @@ def handle_mouse_input(tilemap):
                             if not water_tile(tilemap, grid_x, grid_y):
                                 if not refill_water_if_near_river(tilemap, grid_x, grid_y):
                                     plant_seed(tilemap, grid_x, grid_y)
+
 
 def handle_drag_and_drop():
     global dragging_item, dragging_item_index, dragging_item_offset, inventory
@@ -870,6 +614,7 @@ def handle_drag_and_drop():
             text_x = mouse_x - dragging_item_offset[0] + INVENTORY_SLOT_SIZE[0] - quantity_text.get_width() - 15
             text_y = mouse_y - dragging_item_offset[1] + INVENTORY_SLOT_SIZE[1] - quantity_text.get_height() - 10
             screen.blit(quantity_text, (text_x, text_y))
+
 
 def draw_energy_bar():
     pygame.draw.rect(
@@ -956,6 +701,7 @@ def harvest_plant(x, y):
 
     return False
 
+
 def plant_seed(tilemap, x, y):
     global inventory, selected_item_index
 
@@ -996,7 +742,8 @@ def plant_seed(tilemap, x, y):
                 pink_rose = Plant("pink_rose", "assets/plants/plantGrowing/pink_rose", 4, (x, y), days_to_grow=3)
                 plants.append(pink_rose)
             elif selected_item.name == "Magic Flower Seeds":
-                magic_flower = Plant("magic_flower", "assets/plants/plantGrowing/magic_flower", 4, (x, y), days_to_grow=3)
+                magic_flower = Plant("magic_flower", "assets/plants/plantGrowing/magic_flower", 4, (x, y),
+                                     days_to_grow=3)
                 plants.append(magic_flower)
 
             selected_item.quantity -= 1
@@ -1006,6 +753,7 @@ def plant_seed(tilemap, x, y):
 
 
 COIN_BALANCE = 0
+
 
 def draw_buy_grid():
     if not buy_active:
@@ -1116,6 +864,7 @@ def handle_buy_interaction():
 
                         last_buy_time = current_time
 
+
 def draw_sell_grid():
     if not sell_active:
         return
@@ -1155,8 +904,10 @@ def draw_sell_grid():
 
     return sell_button_rect
 
+
 last_transfer_time = 0
 TRANSFER_COOLDOWN = 0.2
+
 
 def handle_sell_interaction():
     global sell_active, COIN_BALANCE, last_transfer_time
@@ -1285,6 +1036,8 @@ def handle_sell_interaction():
                                 break
 
                     last_transfer_time = current_time
+
+
 MAX_WATER = 10
 current_water = MAX_WATER
 WATER_BAR_WIDTH = 20
@@ -1313,6 +1066,7 @@ def check_grown_crops():
             grown_crops[plant.plant_type] = True
 
     return grown_crops
+
 
 def draw_achievements_menu(screen):
     menu_width = 400
@@ -1369,6 +1123,8 @@ def draw_achievements_menu(screen):
     screen.blit(close_text, (close_button_rect.x + 10, close_button_rect.y + 5))
 
     return close_button_rect
+
+
 def draw_water_bar():
     pygame.draw.rect(
         screen,
@@ -1383,6 +1139,7 @@ def draw_water_bar():
         WATER_BAR_COLOR,
         (WATER_BAR_X, WATER_BAR_Y + (WATER_BAR_HEIGHT - water_height), WATER_BAR_WIDTH, water_height)
     )
+
 
 def update_day_night_cycle():
     global current_cycle_time, is_day, last_time
@@ -1404,6 +1161,7 @@ def update_day_night_cycle():
             grow_plants()
             reset_watered_tiles()
 
+
 def calculate_night_opacity():
     global current_cycle_time, DAY_DURATION
 
@@ -1416,12 +1174,14 @@ def calculate_night_opacity():
 
     return opacity
 
+
 def reset_watered_tiles():
     for y in range(MAP_HEIGHT):
         for x in range(MAP_WIDTH):
             tile = tilemap[y][x]
             if tile.tile_type == "farmland":
                 tile.watered = False
+
 
 def consume_plant():
     global current_energy, selected_item_index, last_consume_time
@@ -1440,12 +1200,15 @@ def consume_plant():
 
             last_consume_time = current_time
 
+
 def grow_plants():
     for plant in plants:
         tile = tilemap[plant.position[1]][plant.position[0]]
         if tile.watered:
             plant.grow()
         tile.watered = False
+
+
 def draw_day_night_overlay():
     opacity = calculate_night_opacity()
 
@@ -1453,6 +1216,7 @@ def draw_day_night_overlay():
         night_overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         night_overlay.fill((0, 0, 0, opacity))
         screen.blit(night_overlay, (0, 0))
+
 
 def draw_coin_balance():
     font = pygame.font.Font(None, 36)
@@ -1498,11 +1262,13 @@ def draw_start_screen(screen):
     load_text = font.render("Load", True, (255, 255, 255))
 
     screen.blit(start_text, (
-    start_button_rect.centerx - start_text.get_width() // 2, start_button_rect.centery - start_text.get_height() // 2))
+        start_button_rect.centerx - start_text.get_width() // 2,
+        start_button_rect.centery - start_text.get_height() // 2))
     screen.blit(load_text, (
-    load_button_rect.centerx - load_text.get_width() // 2, load_button_rect.centery - load_text.get_height() // 2))
+        load_button_rect.centerx - load_text.get_width() // 2, load_button_rect.centery - load_text.get_height() // 2))
 
     return start_button_rect, load_button_rect
+
 
 pygame.mixer.init()
 
